@@ -114,6 +114,10 @@ def custom_openapi():
 
 app.openapi = custom_openapi
 
+@app.get("/health")
+async def health_check():
+    return JSONResponse(status_code=200, content={"status": "ok"})
+
 if __name__ == '__main__':
     # Run from the root of project 
     import os
