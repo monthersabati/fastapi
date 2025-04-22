@@ -1,10 +1,11 @@
 import json
 import base64
+from async_lru import alru_cache
 from fastapi import Request, HTTPException, Depends
 from fastapi.security.api_key import APIKeyHeader
 
 from iam import conf
-from iam.core.keystone import validate_token
+from iam.core.keystone import token_validate
 
 
 class User:
@@ -36,12 +37,17 @@ class User:
         }
 
 
-async def verify_token(request: Request, token: str = Depends(APIKeyHeader(name=conf.AUTHENTICATION_HEADER, auto_error=False))):
+async def validate_token(
+        request: Request,
+        token: str = Depends(APIKeyHeader(name=conf.AUTHENTICATION_HEADER, auto_error=False)),
+        identity: str = Depends(APIKeyHeader(name=conf.IDENTITY_HEADER, auto_error=False)),
+):
     token_info = None
     try:
-        token_info = json.loads(base64.b64decode(request.headers.get(conf.IDENTITY_HEADER).encode()))
+        token_info = json.loads(base64.b64decode(identity.encode()))
     except:
-        token_info = await validate_token(token)
+        token_info = await token_validate(token)
     if not token_info:
-        raise HTTPException(status_code=401, detail="Invalid or missing X-Auth-Token")
+        raise HTTPException(status_code=401, detail=f"Invalid or missing {conf.AUTHENTICATION_HEADER}")
     request.state.user = User(token_info)
+    return token_info

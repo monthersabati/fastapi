@@ -2,6 +2,7 @@ import re
 import logging
 import requests
 from functools import lru_cache
+from async_lru import alru_cache
 from keystoneauth1 import session, token_endpoint
 from keystoneauth1.identity import v3 as v3_auth
 from keystoneclient.v3 import client as v3_client
@@ -162,7 +163,8 @@ async def authenticate(unscoped_token=None, username=None, password=None, **kwar
 
     return {'scoped_token': scoped_auth_ref.auth_token, 'unscoped_token': unscoped_auth_ref.auth_token}
 
-async def validate_token(token):
+@alru_cache
+async def token_validate(token):
     url = f"{conf.OPENSTACK_KEYSTONE_URL}/auth/tokens"
     headers = {
         "X-Auth-Token": token,
@@ -171,6 +173,8 @@ async def validate_token(token):
     response = requests.get(url, headers=headers)
     if response.ok:
         result = response.json().get('token')
+        for field in ('methods', 'audit_ids', 'catalog'):
+            result.pop(field, None)
         result['token'] = token
         return result
 

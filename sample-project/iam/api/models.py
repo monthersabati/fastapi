@@ -20,6 +20,10 @@ class LoginModel(BaseModel):
     project: str = None
 
 
+class TokenValidationModel(BaseModel):
+    token: str
+
+
 class CreateProjectModel(BaseModel):
     name: str
     description: str = None
