@@ -89,11 +89,12 @@ def custom_openapi():
     if app.openapi_schema:
         return app.openapi_schema
     openapi_schema = get_openapi(
-        title="IAM",
+        title=conf.APP_NAME,
         version="1.0.0",
         description="",
         routes=app.routes,
     )
+    openapi_schema["components"] = openapi_schema.get("components") or {}
     openapi_schema["components"]["securitySchemes"] = {
         "AuthToken": {
             "type": "apiKey",
@@ -108,7 +109,7 @@ def custom_openapi():
     }
     for path in openapi_schema["paths"].values():
         for method in path.values():
-            method["security"] = [{"AbrimentToken": []}, {"Identity": []}]
+            method["security"] = [{"AuthToken": []}, {"Identity": []}]
     app.openapi_schema = openapi_schema
     return app.openapi_schema
 
